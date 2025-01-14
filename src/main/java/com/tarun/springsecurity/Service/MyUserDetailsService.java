@@ -1,6 +1,7 @@
 package com.tarun.springsecurity.Service;
 
 import com.tarun.springsecurity.Models.User;
+import com.tarun.springsecurity.Models.UserPrincipal;
 import com.tarun.springsecurity.Repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +23,6 @@ public class MyUserDetailsService implements UserDetailsService {
             System.out.println("User not found");
             throw new UsernameNotFoundException("User not found");
         }
-        return null;
+        return new UserPrincipal(user);
     }
 }
