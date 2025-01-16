@@ -1,6 +1,7 @@
 package com.tarun.springsecurity.Controller;
 
 import com.tarun.springsecurity.Models.User;
+import com.tarun.springsecurity.Service.JwtService;
 import com.tarun.springsecurity.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +20,9 @@ public class UserController {
     @Autowired
     AuthenticationManager authenticationManager;
 
+    @Autowired
+    private JwtService jwtService;
+
     @PostMapping("register")
     public User register(@RequestBody User user)
     {
@@ -33,7 +37,7 @@ public class UserController {
 
         if(authentication.isAuthenticated())
         {
-            return "User logged in successfully";
+            return jwtService.generateToken(user.getUsername());
         }
         else {
             return "Invalid credentials";
