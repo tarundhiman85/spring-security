@@ -200,6 +200,128 @@ INSERT INTO users (username, password) VALUES ('admin', 'admin123');
 INSERT INTO users (username, password) VALUES ('user', '$2a$12$56DE6dUdAiJ5UXQ9SxuVJObUbmwpyAMpqlqZIpLImg/9LmAkPS15S');
 ```
 
+# JWT Integration Module
+
+This module adds JSON Web Token (JWT) functionality to your Spring Security project for stateless authentication.
+
+## Overview
+
+With this enhancement:
+- **JWT-based Authentication** is implemented to replace session-based authentication.
+- A **JWT Filter** intercepts requests to validate tokens and extract user details.
+- Users can authenticate and receive a JWT token using the `/login` endpoint.
+- The token is used for accessing secured endpoints.
+
+---
+
+## Key Components
+
+### 1. **JWT Filter**
+Class: `JwtFilter`
+- Intercepts incoming requests to validate JWT tokens and extract user details.
+- Adds `UsernamePasswordAuthenticationToken` to the Spring Security context if the token is valid.
+
+### Key Method:
+- **`doFilterInternal()`**:
+  - Extracts the JWT token from the `Authorization` header.
+  - Validates the token using `JwtService`.
+  - Authenticates the user if the token is valid.
+
+---
+
+### 2. **Security Config**
+Class: `SecurityConfig`
+
+#### Enhancements:
+- Added `JwtFilter` in the Spring Security filter chain.
+- Configured `/register` and `/login` endpoints to be accessible without authentication.
+
+#### Key Additions:
+- **`AuthenticationManager` Bean**: For manual user authentication during login.
+- **Updated Security Chain**:
+  ```java
+  http.authorizeHttpRequests(request -> request
+      .requestMatchers("register", "login").permitAll()
+      .anyRequest().authenticated()
+  )
+  .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+  .addFilterBefore(JwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+## UserController
+
+The `UserController` handles user registration and login functionalities.
+
+### Endpoints:
+
+1. **`POST /register`**: Registers a new user.
+   - **Payload**:
+     ```json
+     {
+       "username": "user1",
+       "password": "password123"
+     }
+     ```
+   - **Response**: Returns the newly registered user object.
+
+2. **`POST /login`**: Authenticates the user and generates a JWT token.
+   - **Payload**:
+     ```json
+     {
+       "username": "user1",
+       "password": "password123"
+     }
+     ```
+   - **Response**: Returns the JWT token upon successful authentication.
+     ```json
+     {
+       "token": "eyJhbGciOiJIUzI1NiJ9..."
+     }
+     ```
+
+---
+
+## JwtService
+
+The `JwtService` is responsible for generating, validating, and extracting information from JWT tokens.
+
+### Key Methods:
+
+1. **`generateToken(String username)`**:
+   - Generates a JWT token with the username as the subject and a 3-minute expiration.
+
+2. **`extractUsername(String token)`**:
+   - Extracts the username from the token.
+
+3. **`validateToken(String token, UserDetails userDetails)`**:
+   - Validates the token against the user’s details and ensures the token has not expired.
+
+4. **`generateSecretKey()`**:
+   - Dynamically generates a secret key for signing tokens.
+
+---
+
+## How to Use
+
+1. **Register a User**:
+   - Send a `POST` request to `/register` with the user details.
+
+2. **Login and Get JWT**:
+   - Send a `POST` request to `/login` with valid credentials.
+   - Receive the JWT token in the response.
+
+3. **Access Secured Endpoints**:
+   - Use the JWT token in the `Authorization` header to access secured endpoints:
+     ```
+     Authorization: Bearer <your-jwt-token>
+     ```
+
+---
+
+## Future Enhancements
+- Add roles and permissions inside the JWT claims.
+- Integrate JWT refresh tokens for extended session management.
+- Log user activities and token expiration details for better auditing.
+
 # Future Enhancements Module
 
 This module outlines planned or potential improvements to the application for scalability, usability, and feature enrichment.
@@ -215,18 +337,7 @@ This module outlines planned or potential improvements to the application for sc
 
 ---
 
-### 2. **JWT Authentication**
-   - Replace Basic Authentication with JSON Web Token (JWT).
-   - Benefits:
-     - Stateless authentication.
-     - Enhanced security for API access.
-   - Steps:
-     - Generate JWT during login.
-     - Validate JWT for secured endpoints.
-
----
-
-### 3. **User Management Dashboard**
+### 2. **User Management Dashboard**
    - Build a UI dashboard for:
      - Viewing all registered users.
      - Editing or deleting users (admin-only functionality).
@@ -234,13 +345,13 @@ This module outlines planned or potential improvements to the application for sc
 
 ---
 
-### 4. **Audit Logging**
+### 3. **Audit Logging**
    - Track user activities, such as login, logout, and CRUD operations on entities.
    - Store logs in a separate database table or an external monitoring tool.
 
 ---
 
-### 5. **External OAuth2 Integration**
+### 4. **External OAuth2 Integration**
    - Allow users to log in using external providers like Google, GitHub, or Facebook.
    - Benefits:
      - Simplified authentication.
@@ -248,7 +359,7 @@ This module outlines planned or potential improvements to the application for sc
 
 ---
 
-### 6. **Enhanced Security Features**
+### 5. **Enhanced Security Features**
    - Password policies:
      - Minimum password length.
      - Special character and digit requirements.
@@ -257,13 +368,13 @@ This module outlines planned or potential improvements to the application for sc
 
 ---
 
-### 7. **Database Enhancements**
+### 6. **Database Enhancements**
    - Migrate from H2 in-memory database to a persistent database (e.g., MySQL, PostgreSQL) for production use.
    - Implement database versioning with tools like Flyway or Liquibase.
 
 ---
 
-### 8. **Pagination and Filtering**
+### 7. **Pagination and Filtering**
    - Add pagination and filtering for the `/students` and `/users` endpoints.
    - Benefits:
      - Improved performance for large datasets.
@@ -271,7 +382,7 @@ This module outlines planned or potential improvements to the application for sc
 
 ---
 
-### 9. **API Documentation**
+### 8. **API Documentation**
    - Use Swagger/OpenAPI to document all REST endpoints.
    - Benefits:
      - Easier testing and integration for API consumers.
@@ -279,7 +390,7 @@ This module outlines planned or potential improvements to the application for sc
 
 ---
 
-### 10. **Asynchronous Processing**
+### 9. **Asynchronous Processing**
    - Use message brokers like RabbitMQ or Kafka for:
      - Asynchronous email notifications.
      - Event-driven architecture for complex workflows.
